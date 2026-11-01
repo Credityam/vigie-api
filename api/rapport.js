@@ -14,13 +14,23 @@ export default async function handler(req, res) {
   if (!autorise(req)) return refuser(res);
   if (!grapheConfigure()) return res.status(503).json({ erreur: "graph_non_configure" });
   try {
-    const jeton = await obtenirJetonGraph();
+    const r = await traiter(req, res, await obtenirJetonGraph());
+    // Un jeton émis avant l'ajout d'une permission ne la contient pas : on en redemande un frais une fois.
+    if (r === "refaire") await traiter(req, res, await obtenirJetonGraph(true), true);
+  } catch (e) {
+    return res.status(e.statut || 500).json({ erreur: e.code || "interne", message: e.message });
+  }
+}
+
+async function traiter(req, res, jeton, dernierEssai = false) {
+  {
     if (req.method === "GET") {
       const limite = Math.min(Math.max(parseInt(req.query.limite || "20", 10) || 20, 1), 200);
       const rep = await fetch(`${G}/drives/${DRIVE}/items/${DOSSIER}/children?$orderby=lastModifiedDateTime desc&$top=${limite}&$select=name,size,lastModifiedDateTime,webUrl`, {
         headers: { Authorization: `Bearer ${jeton}` },
       });
       const d = await rep.json().catch(() => ({}));
+      if (rep.status === 403 && !dernierEssai) return "refaire";
       if (!rep.ok) return res.status(502).json({ erreur: "graph", statut: rep.status, message: d?.error?.message });
       return res.status(200).json({ rapports: (d.value || []).map((f) => ({ nom: f.name, taille: f.size, modifie: f.lastModifiedDateTime, url: f.webUrl })) });
     }
@@ -39,11 +49,10 @@ export default async function handler(req, res) {
         body: contenu,
       });
       const d = await rep.json().catch(() => ({}));
+      if (rep.status === 403 && !dernierEssai) return "refaire";
       if (!rep.ok) return res.status(502).json({ erreur: "graph", statut: rep.status, message: d?.error?.message });
       return res.status(200).json({ depose: true, nom: d.name, url: d.webUrl, taille: d.size });
     }
     return res.status(405).json({ erreur: "methode" });
-  } catch (e) {
-    return res.status(e.statut || 500).json({ erreur: e.code || "interne", message: e.message });
   }
 }
