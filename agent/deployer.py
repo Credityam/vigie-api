@@ -77,6 +77,9 @@ if "agent" not in ids:
 elif ids.get("agent_systeme_taille") != len(systeme):
     r = api("POST", f"/agents/{ids['agent']}", corps_agent)
     ids["agent_systeme_taille"] = len(systeme); sauver(); print("agent mis à jour, version", r.get("version"))
+    for cle in RUNS:  # les déploiements sont épinglés à une version : on les rattache à la nouvelle
+        if f"deploiement_{cle}" in ids:
+            api("POST", f"/deployments/{ids['deploiement_' + cle]}", {"agent": {"type": "agent", "id": ids["agent"], "version": r.get("version")}})
 
 # 4. Déploiements planifiés.
 for cle, run in RUNS.items():

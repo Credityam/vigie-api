@@ -70,8 +70,11 @@ if "pretai_agent" not in ids:
     r = api("POST", "/agents", corps_agent); ids["pretai_agent"] = r["id"]; ids["pretai_systeme_taille"] = len(systeme); sauver()
     print("agent créé :", r["id"])
 elif ids.get("pretai_systeme_taille") != len(systeme):
-    api("POST", f"/agents/{ids['pretai_agent']}", corps_agent); ids["pretai_systeme_taille"] = len(systeme); sauver()
-    print("agent mis à jour")
+    r = api("POST", f"/agents/{ids['pretai_agent']}", corps_agent); ids["pretai_systeme_taille"] = len(systeme); sauver()
+    print("agent mis à jour, version", r.get("version"))
+    for cle in TACHES:  # les déploiements sont épinglés à une version : on les rattache à la nouvelle
+        if f"pretai_{cle}" in ids:
+            api("POST", f"/deployments/{ids['pretai_' + cle]}", {"agent": {"type": "agent", "id": ids["pretai_agent"], "version": r.get("version")}})
 
 def creer(cle):
     t = TACHES[cle]; k = f"pretai_{cle}"
