@@ -1,0 +1,30 @@
+Run de FIN DE JOURNÉE (18 h 10, bureau fermé) : la journée a-t-elle roulé ? Applique tes instructions générales. Compare aux journées complètes. Les montants de dépôt dans Transaction__c sont NÉGATIFS (dépôt de 500 $ = Amount__c -500) : raisonne en valeur absolue. L'automatisation des dépôts tourne même les jours fermés (3 à 9 dépôts, 300 à 2 100 $ en fin de semaine normale).
+
+S1 Dépôts (tous les jours) → Sarah :
+  SELECT Id, Name, Loan__c, Loan__r.Name, Amount__c, Date__c, CreatedDate, CreatedBy.Name, Status__c, Bank__c FROM Transaction__c WHERE Type__c = 'Dépôt' AND Date__c = TODAY ORDER BY CreatedDate
+  a) Montant unitaire hors de 100 $ à 1 500 $ → ROUGE (Name, prêt, montant, créé par).
+  b) Total > 20 400 $ ou nombre > 67 (records sur 3 ans) → ROUGE ; total > 15 000 $ ou nombre > 55 → JAUNE. Jour fermé : total > 4 000 $ ou nombre > 15 → ROUGE.
+  c) Même Loan__c avec 2 dépôts ou plus le même jour → ROUGE (doublon probable), sauf si les deux font ≤ 300 $ au total.
+  d) Jour ouvrable : 0 dépôt → ROUGE (normal 25 à 40) ; moins de 12 → JAUNE.
+  e) SELECT Id, Name, Type__c, Amount__c, Loan__r.Name, CreatedBy.Name FROM Transaction__c WHERE Type__c IN ('Dépot autre','Dépôt SEKUR') AND Date__c = TODAY → JAUNE pour chacun ; > 1 500 $ → ROUGE. (Si ces valeurs de picklist ne correspondent pas exactement, utilise LIKE 'D_pot autre' et LIKE 'D_p_t SEKUR'.)
+S2 SMS (tous les jours) → Alex :
+  - SELECT DAY_ONLY(CreatedDate) d, COUNT(Id) n FROM MessagingSession WHERE CreatedDate = LAST_N_DAYS:35 GROUP BY DAY_ONLY(CreatedDate) ORDER BY DAY_ONLY(CreatedDate) → compare à la médiane des 4 mêmes jours de semaine (20 à 160 un jour ouvrable, 7 à 12 un jour fermé). ROUGE si 0 un jour ouvrable ou < 25 % de la médiane ; JAUNE si < 50 %.
+  - SELECT Status, COUNT(Id) n FROM MessagingSession WHERE CreatedDate = TODAY GROUP BY Status → JAUNE si > 30 % en erreur/échec.
+  - SELECT RequestStatus, TotalMessageCount, SuccessMessageCount, FailedMessageCount, FailedMessageErrorReasons FROM ConvMessageSendRequest WHERE CreatedDate = TODAY LIMIT 200 → ROUGE si une raison contient « MessagingComponentNotActive » (gabarit désactivé : Setup → Messaging Settings → Messaging Components → Activate) ou si les échecs dépassent 50 % avec au moins 10 envois. « EndUserIsNotOptedIn » = client désabonné, informatif.
+S3 Logins des employées (jours ouvrables) → Sarah (J-F seul pour le compte de Sarah) :
+  SELECT UserId, LoginTime, Status, LoginType, Application FROM LoginHistory WHERE LoginTime = TODAY ORDER BY LoginTime LIMIT 2000 (ignore Application = 'API Compte Client v2'). Noms : SELECT Id, Name, Username FROM User WHERE IsActive = true.
+  Attendues (login avant 10 h) : Sarah-Lisa Daigneault (ressourceshumaines@credityamaska.com), Bianka Daigle-Ducharme (reception2@credityamaska.com), Rosalie G (rgagnebazinet@credityamaska.com), Martine Desorcy (recouvrement@credityamaska.com). JAUNE par employée sans login réussi ; ROUGE si aucune des quatre. Tous les jours : ≥ 5 échecs sur un compte → ROUGE ; login réussi d'un System Administrator depuis une application inhabituelle → JAUNE (→ J-F).
+S4 Appels consignés (informatif) : SELECT DAY_ONLY(CreatedDate) d, COUNT(Id) n FROM Task WHERE TaskSubtype = 'Call' AND CreatedDate = LAST_N_DAYS:10 GROUP BY DAY_ONLY(CreatedDate) → consignés à la main, par rafales ; 0 un jour est normal. JAUNE seulement si 0 sur 5 jours ouvrables de suite. Jamais de ROUGE. N'interroge pas talkdesk__Talkdesk_Activity__c.
+S5 Leads et opportunités (jours ouvrables) → J-F :
+  - SELECT COUNT(Id) n FROM Lead WHERE CreatedDate = TODAY → ROUGE si 0 (30 à 60 normal), JAUNE si < 15.
+  - SELECT COUNT(Id) n FROM Lead WHERE Status = 'New' AND IsConverted = false AND CreatedDate < LAST_N_DAYS:1 AND CreatedDate = LAST_N_DAYS:7 → JAUNE si > 10.
+  - SELECT StageName, COUNT(Id) n FROM Opportunity WHERE CreatedDate = TODAY GROUP BY StageName ; SELECT COUNT(Id) n FROM Opportunity WHERE IsWon = true AND CloseDate = TODAY → JAUNE si 0 créée ET 0 gagnée.
+  - SELECT COUNT(Id) n FROM Opportunity WHERE IsClosed = false AND LastModifiedDate < LAST_N_DAYS:2 AND CreatedDate = LAST_N_DAYS:30 → JAUNE si > 15.
+  - SELECT ApexClass.Name, Status, NumberOfErrors FROM AsyncApexJob WHERE ApexClass.Name IN ('ConvertLeadsBatch','LeadSyncQueueJob','PretAI_Passe1Queueable') AND CreatedDate = TODAY LIMIT 50 → ROUGE (→ Yves) si Failed/Aborted ou erreurs ; JAUNE si aucun ConvertLeadsBatch complété un jour ouvrable.
+S6 Paiements et NSF → Martine (cc Sarah) :
+  - SELECT Type__c, COUNT(Id) n, SUM(Amount__c) t FROM Transaction__c WHERE Date__c = TODAY GROUP BY Type__c → ROUGE si « Encaissé » = 0 un jour ouvrable (80 à 150 normal). NSF : compare aux 20 derniers jours ouvrables (même requête sur LAST_N_DAYS:30 groupée par Date__c) ; ROUGE si le NSF du jour dépasse le double de la médiane avec au moins 10 cas.
+  - SELECT Status, CompletedDate, NumberOfErrors FROM AsyncApexJob WHERE ApexClass.Name = 'trac_NSFPaymentBatch' AND CreatedDate = LAST_N_DAYS:2 ORDER BY CreatedDate DESC LIMIT 20 → JAUNE si aucun run complété aujourd'hui un jour ouvrable ; ROUGE (→ Yves et Martine) si Failed.
+S7 Intégrations (jours ouvrables) → Yves. Inverite__c et Equifax__c ne sont plus alimentés : ne les interroge pas.
+  - SELECT COUNT(Id) n FROM ContentVersion WHERE CreatedDate = TODAY AND Title LIKE 'BVI_%' → ROUGE si 0 (8 à 35 normal), JAUNE si < 5.
+  - SELECT COUNT(Id) n FROM ContentVersion WHERE CreatedDate = LAST_N_DAYS:2 AND Title LIKE 'Equifax%' AND FileExtension = 'txt' (LAST_N_DAYS:4 le lundi) → JAUNE (→ Sarah) seulement si 0 aujourd'hui ET au jour ouvrable précédent.
+  - SELECT COUNT(Id) n FROM Case WHERE CreatedDate = TODAY AND Origin = 'Email' → JAUNE (→ J-F) si 0 un jour ouvrable.
