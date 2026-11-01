@@ -4,6 +4,8 @@
 import { autorise, refuser, lireCorps } from "../lib/auth.js";
 import { obtenirJetonGraph } from "../lib/graph.js";
 
+const liste = (v) => String(v || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   if (!autorise(req)) return refuser(res);
