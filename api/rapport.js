@@ -1,6 +1,7 @@
 // Rapports de run dans SharePoint : site CreditYamaska, bibliothèque Partage, dossier VIGIE SALESFORCE.
 // POST /api/rapport { "nom": "2026-11-02_matin.md", "contenu": "..." }  -> dépose (ou remplace) le fichier
 // GET  /api/rapport?limite=20                                           -> liste les rapports les plus récents
+// GET  /api/rapport?nom=2026-11-02_matin.md                             -> contenu d'un rapport
 import { autorise, refuser, lireCorps } from "../lib/auth.js";
 import { obtenirJetonGraph, grapheConfigure } from "../lib/graph.js";
 
@@ -24,6 +25,15 @@ export default async function handler(req, res) {
 
 async function traiter(req, res, jeton, dernierEssai = false) {
   {
+    if (req.method === "GET" && req.query.nom) {
+      const nom = String(req.query.nom);
+      if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,120}\.(md|html|txt)$/.test(nom)) return res.status(400).json({ erreur: "nom_invalide" });
+      const rep = await fetch(`${G}/drives/${DRIVE}/items/${DOSSIER}:/${encodeURIComponent(nom)}:/content`, { headers: { Authorization: `Bearer ${jeton}` } });
+      if (rep.status === 403 && !dernierEssai) return "refaire";
+      if (rep.status === 404) return res.status(404).json({ erreur: "introuvable" });
+      if (!rep.ok) return res.status(502).json({ erreur: "graph", statut: rep.status });
+      return res.status(200).json({ nom, contenu: await rep.text() });
+    }
     if (req.method === "GET") {
       const limite = Math.min(Math.max(parseInt(req.query.limite || "20", 10) || 20, 1), 200);
       const rep = await fetch(`${G}/drives/${DRIVE}/items/${DOSSIER}/children?$orderby=lastModifiedDateTime desc&$top=${limite}&$select=name,size,lastModifiedDateTime,webUrl`, {

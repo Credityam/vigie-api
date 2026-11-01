@@ -10,9 +10,9 @@ Toutes les routes exigent l'en-tête `x-vigie-cle` (valeur de `VIGIE_API_KEY`).
 | Route | Méthode | Rôle |
 |---|---|---|
 | `/api/sante` | GET | Indique quelles pièces sont configurées, sans révéler de valeur |
-| `/api/sf/query?q=SELECT…` | GET / POST | Requête SOQL lecture seule (max 10 pages) |
+| `/api/sf/query?q=SELECT…` | GET / POST | Requête SOQL lecture seule (max 10 pages) ; `&outil=tooling` pour l'API Tooling |
 | `/api/alerte` | POST | Courriel `{a, cc, sujet, corps, niveau}` |
-| `/api/rapport` | POST / GET | Dépose un rapport de run dans SharePoint (Partage / VIGIE SALESFORCE), ou liste les plus récents |
+| `/api/rapport` | POST / GET | Dépose un rapport de run dans SharePoint (Partage / VIGIE SALESFORCE), ou liste les plus récents ; `?nom=` lit un rapport |
 
 ## Garde-fous
 

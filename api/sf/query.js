@@ -1,5 +1,6 @@
 // GET  /api/sf/query?q=SELECT+Id+FROM+Lead+LIMIT+5
 // POST /api/sf/query  { "q": "SELECT ..." }
+// Ajouter &outil=tooling pour interroger l'API Tooling (FlowDefinition, ApexClass, ApexLog…), toujours en SELECT.
 // Lecture seule : SELECT uniquement, via l'External Client App « Claude Cowork API »
 // (flux Client Credentials). Ne journalise jamais les données retournées.
 import { autorise, refuser, lireCorps } from "../../lib/auth.js";
@@ -55,11 +56,13 @@ export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   if (!autorise(req)) return refuser(res);
   if (req.method !== "GET" && req.method !== "POST") return res.status(405).json({ erreur: "methode" });
-  const q = req.method === "GET" ? req.query.q : (await lireCorps(req)).q;
+  const corps = req.method === "POST" ? await lireCorps(req) : {};
+  const q = req.method === "GET" ? req.query.q : corps.q;
+  const tooling = (req.method === "GET" ? req.query.outil : corps.outil) === "tooling";
   const invalide = valider(q);
   if (invalide) return res.status(400).json({ erreur: "requete_refusee", message: invalide });
   try {
-    let d = await getSF(`/services/data/${API}/query?q=${encodeURIComponent(String(q).trim())}`);
+    let d = await getSF(`/services/data/${API}/${tooling ? "tooling/" : ""}query?q=${encodeURIComponent(String(q).trim())}`);
     const records = [...(d.records || [])];
     let pages = 1;
     while (!d.done && d.nextRecordsUrl && pages < MAX_PAGES) {
