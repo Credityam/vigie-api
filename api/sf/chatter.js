@@ -4,13 +4,15 @@
 // Garde-fous (codés ici, pas seulement dans le prompt) :
 //   - cible : une Opportunity (Id 006…) seulement ;
 //   - mentions : uniquement les utilisateurs de VIGIE_CHATTER_MENTIONS (par défaut Bianka, Rosalie, Sarah) ;
-//   - texte : 15 à 1000 caractères, sans lien ; préfixe imposé « Question de JF (via Claude…) » ;
+//   - texte : 15 à 1000 caractères, sans lien ; préfixe imposé « 🔎 <VIGIE_CHATTER_NOM>, de la part de JF… » ;
 //   - au plus VIGIE_CHATTER_MAX posts par jour (défaut 6) et un seul par dossier par jour ;
 //   - "essai": true valide tout et renvoie le post sans le publier.
 import { autorise, refuser, lireCorps } from "../../lib/auth.js";
 
 const API = "v61.0";
-const MARQUEUR = "Question de JF (via Claude, pas pressant, quand tu as 2 minutes) : ";
+const NOM = (process.env.VIGIE_CHATTER_NOM || "Fouinard").trim().slice(0, 40);
+const MARQUEUR = `🔎 ${NOM}, de la part de JF (pas pressant, quand tu as 2 minutes) : `;
+const SIGNE = "de la part de JF (pas pressant";
 const MENTIONS_DEFAUT = "00541000002yXD5AAM,0051K000008fQ64QAE,00541000001SYy5AAG";
 let jeton = null;
 
@@ -59,7 +61,7 @@ async function moi() {
 
 async function postsDuJour(idMoi) {
   const d = await q(`SELECT Id, ParentId, Body FROM FeedItem WHERE CreatedById = '${idMoi}' AND CreatedDate = TODAY AND Type = 'TextPost' ORDER BY CreatedDate DESC LIMIT 200`);
-  return (d.records || []).filter((r) => String(r.ParentId || "").startsWith("006") && String(r.Body || "").includes("Question de JF (via Claude"));
+  return (d.records || []).filter((r) => String(r.ParentId || "").startsWith("006") && String(r.Body || "").includes(SIGNE));
 }
 
 export default async function handler(req, res) {
