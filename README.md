@@ -12,11 +12,13 @@ Toutes les routes exigent l'en-tête `x-vigie-cle` (valeur de `VIGIE_API_KEY`).
 | `/api/sante` | GET | Indique quelles pièces sont configurées, sans révéler de valeur |
 | `/api/sf/query?q=SELECT…` | GET / POST | Requête SOQL lecture seule (max 10 pages) |
 | `/api/alerte` | POST | Courriel `{a, cc, sujet, corps, niveau}` |
+| `/api/rapport` | POST / GET | Dépose un rapport de run dans SharePoint (Partage / VIGIE SALESFORCE), ou liste les plus récents |
 
 ## Garde-fous
 
 - Envoi limité aux adresses de `VIGIE_DESTINATAIRES` ; `VIGIE_COPIE_TOUJOURS` est ajouté en copie à chaque envoi.
 - Côté Microsoft, l'app Entra « Vigie Salesforce – envoi courriels » (Mail.Send) est restreinte à la boîte `vigie@` par une Application Access Policy sur le groupe de sécurité « Vigie - envoi autorise ».
+- Côté SharePoint, l'app a « Sites.Selected » avec le rôle write sur le site CreditYamaska seulement.
 - Côté Salesforce, l'External Client App « Claude Cowork API » (Client Credentials).
 
 ## Variables d'environnement (Vercel, Production)
