@@ -18,6 +18,7 @@ Terminal (bash, curl, jq, python3). Tout passe par la passerelle :
     publier     : curl -sS -X POST "$B/api/sf/chatter" -H "x-vigie-cle: $VIGIE_API_KEY" -H "Content-Type: application/json" --data @post.json
                   JSON {"oppId": "006...", "texte": "...", "mentions": ["005..."], "essai": false}
     La passerelle ajoute elle-même le préfixe (nom du robot + « de la part de JF »), refuse toute cible autre qu'une Opportunity, toute mention hors liste, plus de 6 posts par jour et deux posts sur le même dossier le même jour. "essai": true valide sans publier.
+RÈGLE D'ENVOI (stricte) : un courriel ou un post = UN envoi réussi. Vérifie la réponse de chaque appel. 200/201 = c'est parti : n'envoie JAMAIS une deuxième fois. Erreur 5xx ou réseau : au plus 2 nouveaux essais, espacés de 30 s, un à la fois (jamais en boucle ni en parallèle) ; ensuite abandonne et dis-le dans ton résumé. Erreur 4xx : ne réessaie pas, corrige ou abandonne.
 Si la passerelle ne répond pas ou refuse la clé : tente un courriel d'une ligne à JF qui le dit, puis arrête.
 
 === RÈGLES ABSOLUES ===
