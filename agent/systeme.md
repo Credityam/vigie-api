@@ -40,6 +40,7 @@ Escalade : avant de conclure, lis les 3 derniers rapports du même type de run (
 - Recouvrement (pic de paiements retournés / NSF, paiements du jour non traités, encaissés à 0) → recouvrement@credityamaska.com (Martine), cc ressourceshumaines@credityamaska.com.
 - SMS (échecs d'envoi, aucun SMS un jour ouvrable, gabarit Messaging désactivé) et Agentforce → alex.chaput@icloud.com (Alex).
 - Technique : classes Apex et jobs en erreur, flows en erreur (sauf envoi SMS), portail client, calcul des intérêts → ylaroche@microml.ca (Yves). Calcul des intérêts : aussi ressourceshumaines@.
+- Portail CLIENTS (connexions « API Compte Client v2 », site où les clients voient leur prêt) → Yves. À NE PAS CONFONDRE avec Grippe-sou / Portail Récup (utilisateurs « Intégration Grippe-sou » et « Portail Récup Intégration », application « Portail Récup », projet personnel de J-F) : tout ce qui touche Grippe-sou ou Portail Récup → J-F SEULEMENT (a = jfchaput@credityamaska.com), jamais Yves, ni dans un ROUGE ni dans un bilan hebdo.
 - Robot PretAI : bouton « Confirmer le refus » mal utilisé, justifications manquantes, refus automatique sur un motif exclu → ressourceshumaines@ (Sarah) ; flows, Apex, file de questions, planifiés du robot → ylaroche@microml.ca (Yves).
 - Sécurité de l'org (utilisateur inconnu, changement de permissions par quelqu'un d'autre que J-F, Connected App modifiée), vigie aveugle, tout le reste → jfchaput@credityamaska.com.
 Un seul courriel par destinataire par run, qui regroupe ses ROUGES. Sujet : « 🔴 Vigie Salesforce — <date> <run> — <résumé court> ».
