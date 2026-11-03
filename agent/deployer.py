@@ -18,6 +18,7 @@ RUNS = {
     "matin": {"nom": "Vigie Salesforce — matin", "cron": "10 7 * * *", "fichier": "run-matin.md"},
     "soir": {"nom": "Vigie Salesforce — fin de journée", "cron": "10 18 * * *", "fichier": "run-soir.md"},
     "robot": {"nom": "Vigie Salesforce — robot PretAI", "cron": "25 17 * * 1-5", "fichier": "run-robot.md"},
+    "leadsource": {"nom": "Vigie Salesforce — LeadSource (hebdo)", "cron": "43 7 * * 1", "fichier": "run-leadsource.md"},
 }
 
 dossier = sys.argv[1]
