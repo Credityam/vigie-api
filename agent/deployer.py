@@ -6,7 +6,7 @@ et vigie-api-vercel.txt (ligne VIGIE_API_KEY=...). Aucune valeur secrète n'est 
 Les identifiants créés sont écrits dans <dossier>/vigie-platform-ids.json ; relancer le script
 réutilise ce qui existe déjà (idempotent) et met à jour l'agent si les prompts ont changé.
 """
-import json, os, sys, time, urllib.request, urllib.error
+import hashlib, json, os, sys, time, urllib.request, urllib.error
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 BASE = "https://api.anthropic.com/v1"
@@ -86,13 +86,19 @@ elif ids.get("agent_systeme_taille") != len(systeme):
 for cle, run in RUNS.items():
     k = f"deploiement_{cle}"
     if k in ids:
+        # Le message de départ est figé à la création : on le remplace si le fichier du run a changé.
+        texte = prompt(run["fichier"])
+        empreinte = hashlib.sha256(texte.encode()).hexdigest()[:16]
+        if ids.get(f"empreinte_{cle}") != empreinte:
+            api("POST", f"/deployments/{ids[k]}", {"initial_events": [{"type": "user.message", "content": [{"type": "text", "text": texte}]}]})
+            ids[f"empreinte_{cle}"] = empreinte; sauver(); print(f"déploiement {cle} : consignes du run mises à jour")
         continue
     r = api("POST", "/deployments", {"name": run["nom"], "agent": ids["agent"], "environment_id": ids["environnement"],
         "vault_ids": [ids["coffre"]],
         "initial_events": [{"type": "user.message", "content": [{"type": "text", "text": prompt(run["fichier"])}]}],
         "schedule": {"type": "cron", "expression": run["cron"], "timezone": TZ},
         "budget": {"type": "limit", "max_list_cost": {"amount": BUDGET_CENTS, "currency": "USD"}}})
-    ids[k] = r["id"]; sauver()
+    ids[k] = r["id"]; ids[f"empreinte_{cle}"] = hashlib.sha256(prompt(run["fichier"]).encode()).hexdigest()[:16]; sauver()
     print(f"déploiement {cle} :", r["id"], "| prochains runs :", ", ".join((r.get("schedule") or {}).get("upcoming_runs_at", [])[:2]))
 
 # 5. Run de test immédiat (optionnel), suivi jusqu'à la fin.
