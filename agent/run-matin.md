@@ -24,8 +24,8 @@ M6 LUNDI SEULEMENT — bilan de la semaine :
 M8 Utilisation du nouveau portail (tous les jours, INFORMATIF, jamais d'alerte — section « Portail clients hier » du rapport) :
   - SELECT Marque__c, COUNT(Id) n FROM Account WHERE Portail_Derniere_Connexion__c = YESTERDAY GROUP BY Marque__c → clients distincts connectés hier, par marque.
   - SELECT COUNT(Id) n FROM Account WHERE Portail_Nb_Connexions__c > 0 → clients qui ont déjà utilisé le portail (cumul).
-  - SELECT COUNT(Id) n, SUM(Amount__c) total FROM Transaction__c WHERE CreatedById = '005JR00000IQUuXYAX' AND CreatedDate = YESTERDAY → retraits faits par les clients dans le portail (le montant est négatif : affiche-le en positif).
-  - SELECT COUNT(Id) n FROM Payment__c WHERE Status__c LIKE 'Report%' AND LastModifiedById = '005JR00000IQUuXYAX' AND LastModifiedDate = YESTERDAY → reports de paiement.
+  - SELECT Canal__c, COUNT(Id) n, SUM(Amount__c) total FROM Transaction__c WHERE Type__c LIKE 'D%p%t' AND CreatedDate = YESTERDAY GROUP BY Canal__c → retraits par canal (Portail, Ancien portail, Agentforce, Employé…; montants négatifs : affiche-les en positif). Note : les « Employé » incluent les dépôts initiaux des nouveaux prêts.
+  - SELECT Canal__c, COUNT(Id) n FROM Payment__c WHERE Status__c LIKE 'Report%' AND LastModifiedDate = YESTERDAY GROUP BY Canal__c → reports de paiement par canal; donne la part faite en ligne (Portail + Ancien portail + Agentforce) vs par une employée.
   - SELECT COUNT(Id) n FROM ContentVersion WHERE Title LIKE 'Portail - Contrat sign%' AND CreatedDate = YESTERDAY → contrats signés.
   Une ligne par chiffre ; le lundi, ajoute le total des 7 derniers jours (LAST_N_DAYS:7 au lieu de YESTERDAY) au bilan de la semaine.
 M7 Nouveau portail, nuit (tous les jours) : fais les vérifications S8 a) et b) du run de fin de journée (contrats signés bloqués, demandes approuvées sans prêt). Les clients signent aussi la nuit.
