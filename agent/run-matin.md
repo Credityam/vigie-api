@@ -21,4 +21,11 @@ M5 Leads de la veille (jours ouvrables ; le lundi, « veille » = vendredi) :
 M6 LUNDI SEULEMENT — bilan de la semaine :
   a) Dans le rapport, section « Bilan de la semaine » (7 derniers jours) : leads, sessions SMS, dépôts (nombre, total), encaissés (nombre, total), NSF, relevés Inverite (ContentVersion Title LIKE 'BVI_%'), rapports Equifax (Title LIKE 'Equifax%' AND FileExtension = 'txt'), logins échoués, jobs Apex en erreur.
   b) Lis tous les rapports des 7 derniers jours (matin, soir, robot). Pour chaque destinataire de la table de routage, regroupe les JAUNES qui relèvent de lui et envoie UN courriel « 🟡 Vigie Salesforce — bilan de la semaine du <date> » (niveau "jaune"), seulement s'il a au moins un point. Même routage, mêmes exceptions, mêmes règles de contenu.
+M8 Utilisation du nouveau portail (tous les jours, INFORMATIF, jamais d'alerte — section « Portail clients hier » du rapport) :
+  - SELECT Marque__c, COUNT(Id) n FROM Account WHERE Portail_Derniere_Connexion__c = YESTERDAY GROUP BY Marque__c → clients distincts connectés hier, par marque.
+  - SELECT COUNT(Id) n FROM Account WHERE Portail_Nb_Connexions__c > 0 → clients qui ont déjà utilisé le portail (cumul).
+  - SELECT COUNT(Id) n, SUM(Amount__c) total FROM Transaction__c WHERE CreatedById = '005JR00000IQUuXYAX' AND CreatedDate = YESTERDAY → retraits faits par les clients dans le portail (le montant est négatif : affiche-le en positif).
+  - SELECT COUNT(Id) n FROM Payment__c WHERE Status__c LIKE 'Report%' AND LastModifiedById = '005JR00000IQUuXYAX' AND LastModifiedDate = YESTERDAY → reports de paiement.
+  - SELECT COUNT(Id) n FROM ContentVersion WHERE Title LIKE 'Portail - Contrat sign%' AND CreatedDate = YESTERDAY → contrats signés.
+  Une ligne par chiffre ; le lundi, ajoute le total des 7 derniers jours (LAST_N_DAYS:7 au lieu de YESTERDAY) au bilan de la semaine.
 M7 Nouveau portail, nuit (tous les jours) : fais les vérifications S8 a) et b) du run de fin de journée (contrats signés bloqués, demandes approuvées sans prêt). Les clients signent aussi la nuit.
