@@ -1,22 +1,29 @@
-Run LEADSOURCE (lundi 7 h 43, hebdomadaire) : l'attribution des leads (Lead Source) est-elle fiable ? J-F prend ses décisions de budget pub sur ces chiffres. Applique tes instructions générales (outils, investigation, contenu des rapports), avec ces précisions propres à ce run :
+Run LEADSOURCE (lundi 7 h 43, hebdomadaire) : l'attribution des leads (Lead Source et campagne) reste-t-elle fiable ? J-F prend ses décisions de budget pub sur ces chiffres. Applique tes instructions générales (outils, investigation, contenu des rapports), avec ces précisions propres à ce run :
 - Rapport : nom « AAAA-MM-JJ_leadsource.md ». Pas de bilan hebdo à part : ce run EST hebdomadaire.
 - Routage : tout ROUGE de ce run → jfchaput@credityamaska.com SEULEMENT. Sujet : « 🔴 Vigie LeadSource — <date> — <résumé court> ».
-- Les JAUNES restent dans le rapport (aucun courriel), SAUF l'exception « fiable » plus bas.
+- Les JAUNES restent dans le rapport (aucun courriel).
 
-CONTEXTE (3 nov. 2026) : 24 % des leads arrivaient avec LeadSource « Site Credit Yamaska » sans vraie source. Cause : les formulaires PHP d'Yves (credityamaska.com/Demande/demande.php et margex.ca/Demande/demande.php) mettent cette valeur par défaut quand l'URL n'a pas le paramètre lsrc. Correctif décidé le 3 nov. : script JS de Luc dans l'en-tête des 2 sites (cookies ck_lsrc et ck_cpid), code d'Yves qui relit ces cookies (lsrc + cpid en groupe), défaut « Margex » sur margex.ca. Date de mise en ligne inconnue : déduis-la des données (chute nette de la part « Site Credit Yamaska ») et dis-la. Autre problème : Google argent et Google Brand partagent la même campagne (Campaign_ID__c 701JR00000rtghdYAA « Google Brand 2026 ») ; correctif chez Luc.
+CONTEXTE (mis à jour le 11 nov. 2026, projet LeadSource terminé) :
+- Formulaires d'Yves (credityamaska.com/Demande/demande.php, v2 depuis le 10 nov., et margex.ca/Demande/demande.php) : la source vient de l'URL (lsrc, cpid), sinon d'un cookie, sinon d'une valeur par défaut.
+- Défaut sur credityamaska.com depuis le 10 nov. : Lead Source « Direct - Organique » + campagne « Naturel 2026 CY » (701JR000013T1o7YAC). Avant, c'était « Site Credit Yamaska » sans campagne. Ce sont de vrais visiteurs directs ou organiques : Analytics montre environ 26 % de trafic non payé, donc 20 à 30 % de « Direct - Organique » est NORMAL, pas un problème.
+- Défaut sur margex.ca : Lead Source « Margex » + campagne « Naturel 2026 margex » (701JR000013FUTQYA4).
+- La marque vient du record type du Lead : « Nouvelle demande » = Crédit Yamaska, « Marge » = Margex. Luc crée des valeurs de Lead Source par campagne (ex. « Margex Tik Tok », « Margex Mailchimp », « Brand », « Google loan ») : c'est voulu, ne le signale pas.
+- Google argent a sa propre campagne depuis le 10 nov. (701JR00000rth2bYAA) ; Google Brand garde 701JR00000rtghdYAA.
+- Perte connue et acceptée par J-F : un client qui passe par le chat Agentforce avant le formulaire arrive sans source (environ 1 lead par jour). Ne le signale pas.
+- Budgets Google Ads réduits par Luc entre le 5 et le 8 nov. (environ 370 $/jour au lieu de 1 120 $) : une baisse des sources Google en novembre a une cause connue.
 
-L1 Part sans source, 5 dernières semaines complètes (lundi à dimanche, plages de dates explicites, RecordType.Name = 'Nouvelle demande') :
-  SELECT LeadSource, COUNT(Id) c FROM Lead WHERE CreatedDate >= <lundi>T00:00:00-05:00 AND CreatedDate < <lundi suivant>T00:00:00-05:00 AND RecordType.Name = 'Nouvelle demande' GROUP BY LeadSource
-  Part sans source = (Site Credit Yamaska + Other + vide) / total. Donne la semaine dernière et la tendance des 4 précédentes.
-L2 Volume : total de la semaine dernière vs moyenne des 4 précédentes. ROUGE si baisse de plus de 40 % (un formulaire est peut-être brisé par le correctif) : vérifie avant d'alerter si c'est un férié ou une coupure de pub (baisse égale dans toutes les sources).
-L3 Margex : leads LeadSource = 'Margex' par semaine (doit monter après le correctif).
-L4 Google argent vs Brand : SELECT LeadSource, Campaign_ID__c, COUNT(Id) c FROM Lead WHERE CreatedDate = LAST_WEEK AND LeadSource LIKE 'Google%' GROUP BY LeadSource, Campaign_ID__c. Réglé quand Google argent a un Campaign_ID__c différent de 701JR00000rtghdYAA.
+L1 Sources de la semaine dernière, Crédit Yamaska (lundi à dimanche, plages de dates explicites) :
+  SELECT LeadSource, Campaign_ID__c, COUNT(Id) c FROM Lead WHERE CreatedDate >= <lundi>T00:00:00-05:00 AND CreatedDate < <lundi suivant>T00:00:00-05:00 AND RecordType.Name = 'Nouvelle demande' GROUP BY LeadSource, Campaign_ID__c
+  Donne la part de chaque famille (Google, Mailchimp, TikTok, Direct - Organique, autres) et la tendance sur 4 semaines (avant le 10 nov., « Site Credit Yamaska » tenait la place de « Direct - Organique »).
+  Régression = leads « Site Credit Yamaska », « credityamaska.com », « Other » ou vide après le 10 nov. (le défaut du formulaire a sauté) : donne leur nombre et leur part.
+L2 Volume : total « Nouvelle demande » + « Marge » de la semaine dernière vs moyenne des 4 précédentes. Si baisse de plus de 40 % : regarde si elle touche surtout les sources payées (budget ou pub coupée) ou aussi « Direct - Organique » (signe d'un formulaire brisé).
+L3 Margex (record type Marge) : leads par Lead Source et campagne (TikTok 701JR000013F5q6YAC, Mailchimp 701JR000013Q1cdYAC, Naturel 701JR000013FUTQYA4).
+L4 Campagnes : leads payés sans Campaign_ID__c (Lead Source Google, TikTok, Mailchimp… mais cpid vide), et leads Google argent sous 701JR00000rtghdYAA (régression).
 L5 Chat Agentforce (informatif) : SELECT COUNT(Id) FROM MessagingSession WHERE CreatedDate = LAST_WEEK AND MessagingChannel.MessageType = 'EmbeddedMessaging'.
 
 NIVEAUX :
-- ROUGE : L2 (baisse de volume inexpliquée de plus de 40 %), ou part sans source qui REMONTE de plus de 10 points d'une semaine à l'autre après avoir baissé.
-- JAUNE : part sans source au-dessus de 5 % alors que le correctif semble en ligne, ou argent et Brand encore confondus. Avant la mise en ligne, la part élevée est attendue : JAUNE « correctif pas encore en ligne ».
-- VERT : part sans source sous 5 % et argent/Brand séparés.
-EXCEPTION « fiable » : la PREMIÈRE semaine où la part sans source passe sous 5 % (vérifie les rapports _leadsource précédents), envoie un court courriel à jfchaput@credityamaska.com, niveau « jaune », sujet « ✅ LeadSource fiable depuis la semaine du <date> », avec les chiffres.
+- ROUGE : volume en baisse de plus de 40 % ET « Direct - Organique » aussi en chute (le formulaire lui-même est probablement brisé), ou plus de 10 % des leads CY en « Site Credit Yamaska » / « Other » / vide (le défaut du formulaire a sauté).
+- JAUNE : baisse de plus de 40 % limitée aux sources payées (budget ou pub coupée, à confirmer avec Luc), Google argent de nouveau sous la campagne de Brand, plus de 5 % de leads payés sans campagne, ou 3 à 10 % de leads CY sans source.
+- VERT : sinon.
 
-RAPPORT : moins de 300 mots. Première ligne « 🔴/🟡/🟢 Vigie LeadSource — semaine du <date> » ; puis part sans source (semaine et tendance), volume, Margex, argent/Brand, sessions de chat, date probable de mise en ligne du correctif, une phrase de recommandation. Pas de nom de client (il n'y en a pas besoin ici).
+RAPPORT : moins de 300 mots. Première ligne « 🔴/🟡/🟢 Vigie LeadSource — semaine du <date> » ; puis répartition par source (semaine et tendance), volume, Margex, campagnes, sessions de chat, une phrase de recommandation. Pas de nom de client.
