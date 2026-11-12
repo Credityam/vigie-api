@@ -7,7 +7,7 @@ S1 Dépôts (tous les jours) → Sarah :
   c) Même Loan__c avec 2 dépôts ou plus le même jour → ROUGE (doublon probable), sauf si les deux font ≤ 300 $ au total.
   d) Jour ouvrable : 0 dépôt → ROUGE (normal 25 à 40) ; moins de 12 → JAUNE.
   e) SELECT Id, Name, Type__c, Amount__c, Loan__r.Name, CreatedBy.Name FROM Transaction__c WHERE Type__c IN ('Dépot autre','Dépôt SEKUR') AND Date__c = TODAY → JAUNE pour chacun ; > 1 500 $ → ROUGE. (Si ces valeurs de picklist ne correspondent pas exactement, utilise LIKE 'D_pot autre' et LIKE 'D_p_t SEKUR'.)
-S2 SMS (tous les jours) → Alex :
+S2 SMS (tous les jours) → J-F :
   - SELECT DAY_ONLY(CreatedDate) d, COUNT(Id) n FROM MessagingSession WHERE CreatedDate = LAST_N_DAYS:35 GROUP BY DAY_ONLY(CreatedDate) ORDER BY DAY_ONLY(CreatedDate) → compare à la médiane des 4 mêmes jours de semaine (20 à 160 un jour ouvrable, 7 à 12 un jour fermé). ROUGE si 0 un jour ouvrable ou < 25 % de la médiane ; JAUNE si < 50 %.
   - SELECT Status, COUNT(Id) n FROM MessagingSession WHERE CreatedDate = TODAY GROUP BY Status → JAUNE si > 30 % en erreur/échec.
   - SELECT RequestStatus, TotalMessageCount, SuccessMessageCount, FailedMessageCount, FailedMessageErrorReasons FROM ConvMessageSendRequest WHERE CreatedDate = TODAY LIMIT 200 → ROUGE si une raison contient « MessagingComponentNotActive » (gabarit désactivé : Setup → Messaging Settings → Messaging Components → Activate) ou si les échecs dépassent 50 % avec au moins 10 envois. « EndUserIsNotOptedIn » = client désabonné, informatif.
